@@ -84,6 +84,35 @@ defmodule SymphonyElixir.Workspace do
     {:ok, workspace, true}
   end
 
+  @spec write_mcp_config(Path.t(), String.t(), keyword()) :: :ok | {:error, term()}
+  def write_mcp_config(workspace, symphony_command, opts \\ []) when is_binary(workspace) and is_binary(symphony_command) do
+    tracker_kind = Keyword.get(opts, :tracker_kind, "local")
+    task_file = Keyword.get(opts, :task_file)
+    task_id = Keyword.get(opts, :task_id)
+
+    env =
+      %{"SYMPHONY_TRACKER_KIND" => tracker_kind}
+      |> maybe_put("SYMPHONY_TASK_FILE", task_file)
+      |> maybe_put("SYMPHONY_TASK_ID", task_id)
+
+    config = %{
+      "mcpServers" => %{
+        "symphony" => %{
+          "command" => symphony_command,
+          "args" => ["mcp-server"],
+          "env" => env
+        }
+      }
+    }
+
+    mcp_path = Path.join(workspace, ".mcp.json")
+
+    case Jason.encode(config, pretty: true) do
+      {:ok, json} -> File.write(mcp_path, json)
+      {:error, reason} -> {:error, {:mcp_config_encode_error, reason}}
+    end
+  end
+
   @spec remove(Path.t()) :: {:ok, [String.t()]} | {:error, term(), String.t()}
   def remove(workspace), do: remove(workspace, nil)
 
@@ -448,6 +477,9 @@ defmodule SymphonyElixir.Workspace do
         {:error, {:workspace_hook_timeout, "remote_command", timeout_ms}}
     end
   end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value) when is_binary(value), do: Map.put(map, key, value)
 
   defp shell_escape(value) when is_binary(value) do
     "'" <> String.replace(value, "'", "'\"'\"'") <> "'"
