@@ -4,6 +4,7 @@ defmodule SymphonyElixir.CLI do
   """
 
   alias SymphonyElixir.LogFile
+  alias SymphonyElixir.Mcp.Server
 
   @acknowledgement_switch :i_understand_that_this_will_be_running_without_the_usual_guardrails
   @switches [{@acknowledgement_switch, :boolean}, logs_root: :string, port: :integer]
@@ -18,6 +19,11 @@ defmodule SymphonyElixir.CLI do
         }
 
   @spec main([String.t()]) :: no_return()
+  def main(["mcp-server" | rest]) do
+    Server.main(rest)
+    System.halt(0)
+  end
+
   def main(args) do
     case evaluate(args) do
       :ok ->
@@ -72,7 +78,8 @@ defmodule SymphonyElixir.CLI do
 
   @spec usage_message() :: String.t()
   defp usage_message do
-    "Usage: symphony [--logs-root <path>] [--port <port>] [path-to-WORKFLOW.md]"
+    "Usage: symphony [--logs-root <path>] [--port <port>] [path-to-WORKFLOW.md]\n" <>
+      "       symphony mcp-server [--tracker-kind <kind>] [--task-file <path>]"
   end
 
   @spec runtime_deps() :: deps()

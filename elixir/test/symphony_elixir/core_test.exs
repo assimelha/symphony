@@ -86,6 +86,14 @@ defmodule SymphonyElixir.CoreTest do
 
     write_workflow_file!(Workflow.workflow_file_path(), tracker_kind: "123")
     assert {:error, {:unsupported_tracker_kind, "123"}} = Config.validate!()
+
+    write_workflow_file!(Workflow.workflow_file_path(), tracker_kind: "local")
+    assert :ok = Config.validate!()
+  end
+
+  test "Tracker.adapter returns Local for tracker.kind local" do
+    write_workflow_file!(Workflow.workflow_file_path(), tracker_kind: "local")
+    assert Tracker.adapter() == SymphonyElixir.Tracker.Local
   end
 
   test "current WORKFLOW.md file is valid and complete" do
